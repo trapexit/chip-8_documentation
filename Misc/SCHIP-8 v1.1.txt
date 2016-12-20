@@ -1,0 +1,200 @@
+(Comp.sys.handhelds)
+Item: 3286 by erikmb at etek.chalmers.se
+Author: [Erik Bryntse]
+  Subj: SUPER-CHIP v1.1 (now with scrolling)
+  Date: Tue May 28 1991
+
+Ok, here are a new version of S-CHIP. It is a lot faster than version
+1.0 and have some new scroll functions. And it's still small!
+
+I have copied parts of the original CHIP-48 documentation and added the
+new functions that are available in S-CHIP. 
+
+If you would like to start writing games for CHIP, read this, get yourself 
+an assembler, look at someone else's program and get started! It's not 
+difficult, you can get something up and working in just an hour or so. 
+And you get the benefits of machine code - the speed - without having 
+to learn all the internals of the 48. And it won't crash when you do 
+something wrong (I hope...).
+
+... and by the way, H. Piper is exactly the kind of super fantastic
+games that I would like to see more of. Good work!
+
+
+SUPER-CHIP v1.1
+===============
+
+... a modified version of the CHIP-8 game interpreter originally
+made by Andreas Gustafsson.
+
+S-CHIP offers:
+
+- full screen resolution in new extended screen mode
+- downward compability (you can run your old CHIP games)
+- higher speed in extended mode
+- a larger 16x16 sprite available
+- new, larger fonts for scores
+- you can pass information to and from a S-CHIP program
+- programmable exit from the S-CHIP interpreter possible
+- no need to turn off the clock
+- it will always start
+- instructions to scroll the screen down, left, and right
+
+
+Introduction to CHIP
+--------------------
+
+For those who don't remember, the CHIP-8 programming language was
+used in a number of home computers based on RCA's CDP1802 pro-
+cessor in the late 1970's.  It's a small, interpreted language
+designed specifically  for writing simple video games.  It has
+less than 40 instructions, including arithmetic, control flow,
+graphics, and sound.  The instructions are all 16 bits long and
+are executed by a very compact virtual machine interpreter (the
+1802 implementation was 512 bytes long).
+ 
+
+Technical specification 
+-----------------------
+
+The CHIP-8 virtual machine is byte-addressable and has an address
+space of 4 kB at addresses 000-FFF hex.  However, addresses
+000-1FF are reserved (this is where the CHIP-8 interpreter used to
+reside). Therefore, the CHIP-8 program itself begins at address
+200. All instructions are 16 bits long and by convention instruc-
+tions always start at an even address. 
+ 
+The machine has 16 8-bit general-purpose registers called V0..VF. 
+The VF register is modified by certain instructions and works as a
+carry flag and sprite collision indicator.  There is also a 16-bit
+pointer register I (though only the low 12 bits are generally
+used). 
+ 
+A CHIP-8 program displays graphics by drawing sprites that are 8 
+pixels wide and 1..15 pixels high.  The screen resolution is 32 by
+64 pixels in standard mode.  The origin is the upper left corner
+of the screen, and all coordinates are positive.  The sprites are
+stored in bigendian format, i.e., the most significant bit corre-
+sponds to the leftmost pixel. All drawing is done in XOR mode. If
+this causes one or more pixels to be erased, VF is <> 00, other-
+wise 00.
+
+In extended screen mode the resolution is 64 by 128 pixels. A
+sprite of 16x16 size is available. 
+ 
+There are two timers: the delay timer and the sound timer.  Both 
+timers count down about 60 times per second when nonzero; the
+speaker will beep whenever the sound timer is nonzero. 
+ 
+In the instruction table below, NNN is a 12-bit address, KK is an 
+8-bit constant, and X and Y are 4-bit register numbers.  Hex 
+characters represent themselves.  The two first characters of the 
+instruction code form the lower-address byte of the instruction,
+the first character being the more significant nibble. 
+ 
+Instructions marked with (*) are new in SUPER-CHIP.
+
+00CN*    Scroll display N lines down
+00E0     Clear display 
+00EE     Return from subroutine
+00FB*    Scroll display 4 pixels right
+00FC*    Scroll display 4 pixels left
+00FD*    Exit CHIP interpreter
+00FE*    Disable extended screen mode
+00FF*    Enable extended screen mode for full-screen graphics
+1NNN     Jump to NNN 
+2NNN     Call subroutine at NNN 
+3XKK     Skip next instruction if VX == KK 
+4XKK     Skip next instruction if VX <> KK 
+5XY0     Skip next instruction if VX == VY 
+6XKK     VX := KK 
+7XKK     VX := VX + KK 
+8XY0     VX := VY, VF may change 
+8XY1     VX := VX or VY, VF may change 
+8XY2     VX := VX and VY, VF may change 
+8XY3     VX := VX xor VY, VF may change
+8XY4     VX := VX + VY, VF := carry 
+8XY5     VX := VX - VY, VF := not borrow 
+8XY6     VX := VX shr 1, VF := carry 
+8XY7     VX := VY - VX, VF := not borrow
+8XYE     VX := VX shl 1, VF := carry 
+9XY0     Skip next instruction if VX <> VY 
+ANNN     I := NNN 
+BNNN     Jump to NNN+V0 
+CXKK     VX := pseudorandom_number and KK 
+DXYN*    Show N-byte sprite from M(I) at coords (VX,VY), VF :=
+         collision. If N=0 and extended mode, show 16x16 sprite.
+EX9E     Skip next instruction if key VX pressed 
+EXA1     Skip next instruction if key VX not pressed 
+FX07     VX := delay_timer 
+FX0A     wait for keypress, store hex value of key in VX 
+FX15     delay_timer := VX 
+FX18     sound_timer := VX 
+FX1E     I := I + VX 
+FX29     Point I to 5-byte font sprite for hex character VX 
+FX30*    Point I to 10-byte font sprite for digit VX (0..9)
+FX33     Store BCD representation of VX in M(I)..M(I+2) 
+FX55     Store V0..VX in memory starting at M(I) 
+FX65     Read V0..VX from memory starting at M(I) 
+FX75*    Store V0..VX in RPL user flags (X <= 7)
+FX85*    Read V0..VX from RPL user flags (X <= 7) 
+
+ 
+Notes on the HP48SX implementation  
+----------------------------------
+
+CHIP-8 programs are stored in the HP48SX as string objects con-
+taining the bytes of the program in increasing address order,
+beginning with the byte at 0200.  The interpreter itself is a
+machine code object that should be run with the CHIP-8 program
+string on level 1. 4 kB of free memory is needed.  If an error is
+detected during execution, the address of the current CHIP-8
+instruction is returned as a binary integer on level 1. 
+ 
+To quit, press the backspace key.  Pressing ENTER restarts the
+CHIP-8 program, and the +/- key turns the sound off or on. 
+ 
+Subroutine nesting is limited to 16 levels. 
+ 
+Most chip-8 programs are written for a 16-key hex keyboard with  
+following layout: 
+ 
+  1 2 3 C                                               7 8 9 / 
+  4 5 6 D    This keyboard is emulated on the HP48SX    4 5 6 * 
+  7 8 9 E    using the following keys:                  1 2 3 - 
+  A 0 B F                                               0 . _ + 
+ 
+This may cause some confusion with programs requiring numerical
+input. 
+ 
+
+Copyrights, etc
+---------------
+
+Parts of this document is copied from the original CHIP-48 docu-
+mentation written by Andreas Gustafsson. Below is the original
+copyright message for CHIP-48 v2.25
+
+(c) Copyright 1990 Andreas Gustafsson
+
+Noncommercial distribution allowed, provided that this copyright
+message is preserved, and any modified versions are clearly marked
+as such.
+
+The program makes use of undocumented low-level features of the
+HP48SX calculator, and may or may not cause loss of data, ex-
+cessive battery drainage, and/or damage to the calculator hard-
+ware. The author takes no responsibility whatsoever for any damage
+caused by the use of this program.
+
+THIS SOFTWARE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESSED OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PUR-
+POSE.
+
+
+The modifications from CHIP v2.25 to S-CHIP v1.1 is made by 
+
+Erik Bryntse
+(erikmb@etek.chalmers.se)
+
