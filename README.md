@@ -21,7 +21,6 @@ Each opcode is 16bits. References to registers are usually refered to by `X` and
 | Opcode | Mnemonic | Origin/Version | Description |
 |--------|----------|----------------|-------------|
 | 001N   | EXIT N   | CHIP-8  | From Peter Miller's chip8run. Exit emulator with a return value of `N`. |
-| 00BN   | SCU N    | SCHIP-8 | Scroll display `N` lines up. |
 | 00CN   | SCD N    | SCHIP-8 | Scroll display `N` lines down. |
 | 00E0   | CLS      | CHIP-8  | Clears the display. Sets all pixels to `off`. |
 | 00EE   | RET      | CHIP-8  | Return from subroutine. Set the `PC` to the address at the top of the stack and subtract `1` from the `SP`. |
